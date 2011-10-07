@@ -1,0 +1,209 @@
+#! /bin/sh
+""":"
+exec python $0 ${1+"$@"}
+"""
+
+import oauth2 as oauth
+import os, ConfigParser
+import argparse
+import urlparse
+import urllib
+
+settings_file = os.path.expanduser('~/.curl-oauth')
+config = ConfigParser.RawConfigParser()
+if os.path.isfile(settings_file):
+  config.read(settings_file)
+
+parser = argparse.ArgumentParser(description='A curl like tool with oauth support')
+
+#oauth
+parser.add_argument('--domain', dest='domain',
+                   help='config domain')
+parser.add_argument('--list-domains', dest='list_domains', action='store_true',
+                   help='list available domains')
+"""
+parser.add_argument('--delete-domain', dest='delete_domain',
+                   help='delete domain')
+parser.add_argument('--set-default-domains', dest='set_default_domain',
+                   help='set default domain')
+"""
+parser.add_argument('--consumer-key', '-ck', dest='consumer_key',
+                   help='consumer key')
+parser.add_argument('--consumer-secret', '-cs', dest='consumer_secret',
+                   help='consumer secret')
+parser.add_argument('--token-key', '-tk', dest='token_key',
+                   help='token key')
+parser.add_argument('--token_secret', '-ts', dest='token_secret',
+                   help='token secret')
+parser.add_argument('--request-token', '-nt', action='store_true', dest='request_token',
+                   help='create new token')
+parser.add_argument('--request-token-url', dest='request_token_url',
+                   help='request token url')
+parser.add_argument('--request-token-callback', dest='request_token_callback',
+                   help='request token callback')
+parser.add_argument('--request-token-authorize-url', dest='request_token_authorize_url',
+                   help='request token authorize url')
+parser.add_argument('--request-token-access-token-url', dest='request_token_access_token_url',
+                   help='request token access verify url')
+
+#curl like
+parser.add_argument('-X', '--request', dest='http_method', default='GET',
+                   help='-X/--request <command> Specify request command to use')
+parser.add_argument('-H', '--header', dest='headers', action='append',
+                   help='-H/--header <line> Custom header to pass to server')
+parser.add_argument('-d', '--data', dest='data',
+                   help='d/--data <data>   HTTP POST data')
+parser.add_argument('-I', '--head', dest='head', action='store_true',
+                   help='-I/--head Show document info only')
+parser.add_argument('-i', '--include', dest='include', action='store_true',
+                   help='-i/--include       Include protocol headers in the output (H/F)')
+parser.add_argument('--url', dest='url')
+
+
+
+
+                   
+args = parser.parse_args()
+
+def request_token(consumer_key, consumer_secret, request_token_url, request_token_callback, request_token_authorize_url, request_token_access_token_url, domain):
+  print "requesting token to %s for %s" % (request_token_url, consumer_key)
+  consumer = oauth.Consumer(consumer_key, consumer_secret)
+  client = oauth.Client(consumer)
+  resp, content = client.request(request_token_url)
+  #print resp, content
+  if resp['status'] == '401':
+    print "Unauthorized access, check your consumer data"
+    exit(1)
+  if resp['status'] != '201' and resp['status'] != '200':
+      print "Error receiving request token"
+      exit(1)
+  
+  request_token = dict(urlparse.parse_qsl(content))
+  
+  print ""
+  print "Go to the following link in your browser:"
+  print "%s?oauth_token=%s&oauth_callback=%s" % (request_token_authorize_url, request_token['oauth_token'], request_token_callback)
+  accepted = 'n'
+  while accepted.lower() == 'n':
+    accepted = raw_input('Have you authorized me? (y/n) ')
+  oauth_verifier = raw_input('What is the PIN? ')
+  
+  token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
+  token.set_verifier(oauth_verifier)
+  client = oauth.Client(consumer, token)
+  
+  resp, content = client.request(request_token_access_token_url)
+  
+  access_token = dict(urlparse.parse_qsl(content))
+  config.add_section(domain)
+  if not config.has_section('defaults'):
+      config.add_section('defaults')
+      config.set('defaults', 'domain', domain)
+  config.set(domain, 'consumer_key', consumer_key)
+  config.set(domain, 'consumer_secret', consumer_secret)
+  config.set(domain, 'token_key', access_token['oauth_token'])
+  config.set(domain, 'token_secret', access_token['oauth_token_secret'])
+  config.write(open(settings_file, "wb"))
+
+
+def list_domains():
+    if len(config.sections()) < 2:
+        print 'No domains have been defined';
+        exit(0)
+        
+    if config.has_section('defaults') and config.has_option('defaults', 'domain'):
+        default_domain = config.get('defaults', 'domain')
+    else:
+        print "Error parsing config file";
+        exit(1)
+        
+    for section in config.sections():
+        if section == 'defaults':
+            continue
+        print '%s%s' % ('* ' if section == default_domain else '',section)
+
+def no_config_available(args):
+  if args.consumer_key == None or args.consumer_secret == None:
+    print "No token for this domain available, set consumer_key, consumer_secret and initialize token"
+    exit(1)
+
+  if not args.request_token and (args.token_key == None or args.token_secret == None):
+    print "Set token key and secret or use --request_token"
+    exit(1)
+  
+  if args.request_token and args.request_token_url != None and args.request_token_callback != None and args.request_token_authorize_url != None and args.request_token_access_token_url != None:
+    access_token = request_token(args.consumer_key, args.consumer_secret, args.request_token_url, args.request_token_callback, args.request_token_authorize_url, args.request_token_access_token_url, args.domain)
+    exit(1)
+  else:
+      print "Set request_token_url, request_token_callback, request_token_authorize_url and request_token_access_token_url "
+      exit(1)
+  
+
+if args.list_domains:
+    list_domains()
+    exit(0)
+      
+  
+if args.domain == None:
+  if config.has_section('defaults') and config.has_option('defaults', 'domain'):
+    domain = config.get('defaults', 'domain')
+  else:
+    print "Set domain for token key"
+    exit(1)
+else:
+    domain = args.domain
+
+if not config.has_section(domain):
+    no_config_available(args)
+    exit(1)
+
+
+
+consumer = oauth.Consumer(key=config.get(domain, 'consumer_key'), secret=config.get(domain, 'consumer_secret'))
+token = oauth.Token(key=config.get(domain, 'token_key'), secret=config.get(domain, 'token_secret'))
+client = oauth.Client(consumer, token)
+
+headers = {}
+body = None 
+
+if args.headers is not None:
+    for h in args.headers:
+        try:
+            headers[h.split(': ')[0]] = h.split(': ')[1]
+        except:
+            print "Wrong header format %s" % h
+            exit(1)
+
+if args.data is not None:
+    headers['Content-type'] = 'application/x-www-form-urlencoded'
+    body = args.data
+
+
+if args.head:
+    http_method='HEAD'
+else:
+    http_method=args.http_method
+http_method = args.http_method    
+try:
+    if body is not None:
+        resp, content = client.request(args.url, http_method, headers=headers, body=body)
+    else:
+        resp, content = client.request(args.url, http_method, headers=headers)
+    if args.head or args.include:
+        if resp.version == 11:
+            http_version = '1.1'
+        elif resp.version == 10:
+            http_version = '1.0'
+        else:
+            http_version = 'unknown (%s)' % resp.version
+        print 'HTTP/%s %s %s' % (http_version, resp.status, resp.reason.upper())
+        for k in resp:
+            if k in ['status']:
+                continue
+            print '%s: %s' % ('-'.join((ck.capitalize() for ck in k.split('-'))), resp[k]) 
+    if not args.head:
+        print content
+        
+except Exception, e:
+    print e
+
