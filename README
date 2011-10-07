@@ -28,9 +28,12 @@ usage: curl-oauth [-h] [--domain DOMAIN] [--list-domains]
                   [--request-token-authorize-url REQUEST_TOKEN_AUTHORIZE_URL]
                   [--request-token-access-token-url REQUEST_TOKEN_ACCESS_TOKEN_URL]
                   [-X HTTP_METHOD] [-H HEADERS] [-d DATA] [-I] [-i]
-                  [--url URL]
+                  [urls [urls ...]]
 
 A curl like tool with oauth support
+
+positional arguments:
+  urls
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -44,7 +47,7 @@ optional arguments:
                         token key
   --token_secret TOKEN_SECRET, -ts TOKEN_SECRET
                         token secret
-  --request-token, -nt  create new token
+  --request-token       create new token
   --request-token-url REQUEST_TOKEN_URL
                         request token url
   --request-token-callback REQUEST_TOKEN_CALLBACK
@@ -54,11 +57,9 @@ optional arguments:
   --request-token-access-token-url REQUEST_TOKEN_ACCESS_TOKEN_URL
                         request token access verify url
   -X HTTP_METHOD, --request HTTP_METHOD
-                        -X/--request <command> Specify request command to use
+                        Specify request command to use
   -H HEADERS, --header HEADERS
-                        -H/--header <line> Custom header to pass to server
-  -d DATA, --data DATA  d/--data <data> HTTP POST data
-  -I, --head            -I/--head Show document info only
-  -i, --include         -i/--include Include protocol headers in the output
-                        (H/F)
-  --url URL
+                        Custom header to pass to server
+  -d DATA, --data DATA  HTTP POST data
+  -I, --head            Show document info only
+  -i, --include         Include protocol headers in the output

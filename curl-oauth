@@ -56,15 +56,16 @@ parser.add_argument('-d', '--data', dest='data',
 parser.add_argument('-I', '--head', dest='head', action='store_true',
                    help='Show document info only')
 parser.add_argument('-i', '--include', dest='include', action='store_true',
-                   help='Include protocol headers in the output (H/F)')
+                   help='Include protocol headers in the output')
                    
-parser.add_argument('--url', dest='url')
+parser.add_argument('urls',  nargs='*')
 
 
 
 
                    
 args = parser.parse_args()
+
 
 def request_token(consumer_key, consumer_secret, request_token_url, request_token_callback, request_token_authorize_url, request_token_access_token_url, domain):
   print "requesting token to %s for %s" % (request_token_url, consumer_key)
@@ -185,26 +186,29 @@ if args.head:
 else:
     http_method=args.http_method
 http_method = args.http_method    
-try:
-    if body is not None:
-        resp, content = client.request(args.url, http_method, headers=headers, body=body)
-    else:
-        resp, content = client.request(args.url, http_method, headers=headers)
-    if args.head or args.include:
-        if resp.version == 11:
-            http_version = '1.1'
-        elif resp.version == 10:
-            http_version = '1.0'
-        else:
-            http_version = 'unknown (%s)' % resp.version
-        print 'HTTP/%s %s %s' % (http_version, resp.status, resp.reason.upper())
-        for k in resp:
-            if k in ['status']:
-                continue
-            print '%s: %s' % ('-'.join((ck.capitalize() for ck in k.split('-'))), resp[k]) 
-    if not args.head:
-        print content
-        
-except Exception, e:
-    print e
+
+for url in args.urls:
+  try:
+      if body is not None:
+          resp, content = client.request(url, http_method, headers=headers, body=body)
+      else:
+          resp, content = client.request(url, http_method, headers=headers)
+      if args.head or args.include:
+          if resp.version == 11:
+              http_version = '1.1'
+          elif resp.version == 10:
+              http_version = '1.0'
+          else:
+              http_version = 'unknown (%s)' % resp.version
+          print 'HTTP/%s %s %s' % (http_version, resp.status, resp.reason.upper())
+          for k in resp:
+              if k in ['status']:
+                  continue
+              print '%s: %s' % ('-'.join((ck.capitalize() for ck in k.split('-'))), resp[k]) 
+      if not args.head:
+          print content
+          
+  except Exception, e:
+      print e
+      
 
