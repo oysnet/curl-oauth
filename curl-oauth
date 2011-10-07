@@ -35,7 +35,7 @@ parser.add_argument('--token-key', '-tk', dest='token_key',
                    help='token key')
 parser.add_argument('--token_secret', '-ts', dest='token_secret',
                    help='token secret')
-parser.add_argument('--request-token', '-nt', action='store_true', dest='request_token',
+parser.add_argument('--request-token', action='store_true', dest='request_token',
                    help='create new token')
 parser.add_argument('--request-token-url', dest='request_token_url',
                    help='request token url')

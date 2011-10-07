@@ -1,4 +1,64 @@
+INSTALL
+
 cd $TMPDIR
 curl -O https://raw.github.com/oxys/curl-oauth/master/curl-oauth
 chmod a+x curl-oauth
 sudo mv curl-oauth /usr/local/bin/
+
+START
+
+export API="http://example.com/api/oauth";
+curl-oauth --domain example \
+  --request-token \
+  --consumer_secret Mq4As9xngJzyqQ2vRaYWGF9qRquvyBxI \
+  --consumer_key BQNmyk5sAb7m8vSvbA  \
+  --request_token_url $API/request_token/ \
+  --request_token_callback http://example.com \
+  --request_token_authorize_url $API/authorize/ 
+  --request_token_access_token_url $API/access_token/
+  
+USAGE
+
+usage: curl-oauth [-h] [--domain DOMAIN] [--list-domains]
+                  [--consumer-key CONSUMER_KEY]
+                  [--consumer-secret CONSUMER_SECRET] [--token-key TOKEN_KEY]
+                  [--token_secret TOKEN_SECRET] [--request-token]
+                  [--request-token-url REQUEST_TOKEN_URL]
+                  [--request-token-callback REQUEST_TOKEN_CALLBACK]
+                  [--request-token-authorize-url REQUEST_TOKEN_AUTHORIZE_URL]
+                  [--request-token-access-token-url REQUEST_TOKEN_ACCESS_TOKEN_URL]
+                  [-X HTTP_METHOD] [-H HEADERS] [-d DATA] [-I] [-i]
+                  [--url URL]
+
+A curl like tool with oauth support
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --domain DOMAIN       config domain
+  --list-domains        list available domains
+  --consumer-key CONSUMER_KEY, -ck CONSUMER_KEY
+                        consumer key
+  --consumer-secret CONSUMER_SECRET, -cs CONSUMER_SECRET
+                        consumer secret
+  --token-key TOKEN_KEY, -tk TOKEN_KEY
+                        token key
+  --token_secret TOKEN_SECRET, -ts TOKEN_SECRET
+                        token secret
+  --request-token, -nt  create new token
+  --request-token-url REQUEST_TOKEN_URL
+                        request token url
+  --request-token-callback REQUEST_TOKEN_CALLBACK
+                        request token callback
+  --request-token-authorize-url REQUEST_TOKEN_AUTHORIZE_URL
+                        request token authorize url
+  --request-token-access-token-url REQUEST_TOKEN_ACCESS_TOKEN_URL
+                        request token access verify url
+  -X HTTP_METHOD, --request HTTP_METHOD
+                        -X/--request <command> Specify request command to use
+  -H HEADERS, --header HEADERS
+                        -H/--header <line> Custom header to pass to server
+  -d DATA, --data DATA  d/--data <data> HTTP POST data
+  -I, --head            -I/--head Show document info only
+  -i, --include         -i/--include Include protocol headers in the output
+                        (H/F)
+  --url URL
