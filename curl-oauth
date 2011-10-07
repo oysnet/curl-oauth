@@ -8,7 +8,15 @@ import os, ConfigParser
 import argparse
 import urlparse
 import urllib
-
+import json
+try:
+  from pygments import highlight
+  from pygments.lexers import JavascriptLexer
+  from pygments.formatters import TerminalFormatter
+  pygment_support = True
+except:
+  pygment_support = False
+  
 settings_file = os.path.expanduser('~/.curl-oauth')
 config = ConfigParser.RawConfigParser()
 if os.path.isfile(settings_file):
@@ -45,6 +53,8 @@ parser.add_argument('--request-token-authorize-url', dest='request_token_authori
                    help='request token authorize url')
 parser.add_argument('--request-token-access-token-url', dest='request_token_access_token_url',
                    help='request token access verify url')
+parser.add_argument('--json', dest='json', action='store_true',
+                   help='add content type and prettify output (install pigments for colors)')
 
 #curl like
 parser.add_argument('-X', '--request', dest='http_method', default='GET',
@@ -168,10 +178,12 @@ client = oauth.Client(consumer, token)
 headers = {}
 body = None 
 
+if args.json:
+  headers['content-type']='application/json'
 if args.headers is not None:
     for h in args.headers:
         try:
-            headers[h.split(': ')[0]] = h.split(': ')[1]
+            headers[h.split(': ')[0].lower()] = h.split(': ')[1]
         except:
             print "Wrong header format %s" % h
             exit(1)
@@ -206,7 +218,25 @@ for url in args.urls:
                   continue
               print '%s: %s' % ('-'.join((ck.capitalize() for ck in k.split('-'))), resp[k]) 
       if not args.head:
-          print content
+          if args.json:
+            try:
+              content = json.dumps(json.loads(content), indent=2)
+            except Exception, e:
+              print content
+              print 'Json error %s' % e
+              exit(1)
+            if pygment_support:
+              try:
+                print highlight(content, JavascriptLexer(),TerminalFormatter())
+                exit(0)
+              except Exception,e:
+                print e
+                exit(1)
+            else:
+              print content
+              exit(0)
+          else:
+            print content
           
   except Exception, e:
       print e
