@@ -27,7 +27,7 @@ usage: curl-oauth [-h] [--domain DOMAIN] [--list-domains]
                   [--request-token-callback REQUEST_TOKEN_CALLBACK]
                   [--request-token-authorize-url REQUEST_TOKEN_AUTHORIZE_URL]
                   [--request-token-access-token-url REQUEST_TOKEN_ACCESS_TOKEN_URL]
-                  [-X HTTP_METHOD] [-H HEADERS] [-d DATA] [-I] [-i]
+                  [--json] [-X HTTP_METHOD] [-H HEADERS] [-d DATA] [-I] [-i]
                   [urls [urls ...]]
 
 A curl like tool with oauth support
@@ -56,6 +56,8 @@ optional arguments:
                         request token authorize url
   --request-token-access-token-url REQUEST_TOKEN_ACCESS_TOKEN_URL
                         request token access verify url
+  --json                add content type and prettify output (install pigments
+                        for colors)
   -X HTTP_METHOD, --request HTTP_METHOD
                         Specify request command to use
   -H HEADERS, --header HEADERS
