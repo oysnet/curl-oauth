@@ -5,6 +5,9 @@ curl -O https://raw.github.com/oxys/curl-oauth/master/curl-oauth
 chmod a+x curl-oauth
 sudo mv curl-oauth /usr/local/bin/
 
+Optional for json colorized output:
+  pip install pygments
+
 START
 
 export API="http://example.com/api/oauth";
