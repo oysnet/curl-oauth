@@ -48,7 +48,7 @@ optional arguments:
                         consumer secret
   --token-key TOKEN_KEY, -tk TOKEN_KEY
                         token key
-  --token_secret TOKEN_SECRET, -ts TOKEN_SECRET
+  --token-secret TOKEN_SECRET, -ts TOKEN_SECRET
                         token secret
   --request-token       create new token
   --request-token-url REQUEST_TOKEN_URL
