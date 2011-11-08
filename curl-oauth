@@ -179,7 +179,7 @@ headers = {}
 body = None 
 
 if args.json:
-  headers['content-type']='application/json'
+  headers['Content-Type']='application/json'
 if args.headers is not None:
     for h in args.headers:
         try:
