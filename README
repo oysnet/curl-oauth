@@ -1,7 +1,7 @@
 INSTALL
 
 cd $TMPDIR
-curl -O https://raw.github.com/oxys/curl-oauth/master/curl-oauth
+curl -O https://raw.github.com/oxys-net/curl-oauth/master/curl-oauth
 chmod a+x curl-oauth
 sudo mv curl-oauth /usr/local/bin/
 
