@@ -4,6 +4,8 @@ cd $TMPDIR
 curl -O https://raw.github.com/oxys-net/curl-oauth/master/curl-oauth
 chmod a+x curl-oauth
 sudo mv curl-oauth /usr/local/bin/
+sudo pip install oauth2
+cd -
 
 Optional for json colorized output:
   pip install pygments
