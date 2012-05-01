@@ -9,6 +9,7 @@ import argparse
 import urlparse
 import json
 import httplib2
+import sys
 try:
   from pygments import highlight
   from pygments.lexers import JavascriptLexer
@@ -67,6 +68,8 @@ parser.add_argument('-H', '--header', dest='headers', action='append',
                    help='Custom header to pass to server')
 parser.add_argument('-d', '--data', dest='data',
                    help='HTTP POST data')
+parser.add_argument('-T', '--upload-file', dest='upload_file',
+                   help='Transfer a file in the body of the http request.  Defaults to PUT.')
 parser.add_argument('-I', '--head', dest='head', action='store_true',
                    help='Show document info only')
 parser.add_argument('-i', '--include', dest='include', action='store_true',
@@ -210,19 +213,31 @@ if args.data is not None:
     body = args.data
 
 
+if args.upload_file:
+    if args.http_method == 'GET':
+        args.http_method = 'PUT'
+    if args.upload_file == '-':
+        input = sys.stdin
+    else:
+        input = open(args.upload_file)
+    body = input.read()
+
 if args.head:
-    http_method='HEAD'
+    args.http_method == 'HEAD'
+
+if args.http_method == 'HEAD':
+    # work around https://github.com/simplegeo/python-oauth2/issues/58
+    oauth_http_method = 'GET'
 else:
-    http_method=args.http_method
-http_method = args.http_method
+    oauth_http_method=args.http_method
 
 for url in args.urls:
   try:
       if body is not None:
-          resp, content = client.request(url, http_method, headers=headers, body=body)
+          resp, content = client.request(url, oauth_http_method, headers=headers, body=body)
       else:
-          resp, content = client.request(url, http_method, headers=headers)
-      if args.head or args.include:
+          resp, content = client.request(url, oauth_http_method, headers=headers)
+      if args.http_method == 'HEAD' or args.include:
           if resp.version == 11:
               http_version = '1.1'
           elif resp.version == 10:
@@ -234,7 +249,7 @@ for url in args.urls:
               if k in ['status']:
                   continue
               print '%s: %s' % ('-'.join((ck.capitalize() for ck in k.split('-'))), resp[k])
-      if not args.head:
+      if args.http_method != 'HEAD':
           if args.json:
             try:
               content = json.dumps(json.loads(content), indent=2)
