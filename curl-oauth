@@ -16,7 +16,7 @@ try:
   pygment_support = True
 except:
   pygment_support = False
-  
+
 settings_file = os.path.expanduser('~/.curl-oauth')
 config = ConfigParser.RawConfigParser()
 if os.path.isfile(settings_file):
@@ -41,7 +41,7 @@ parser.add_argument('--consumer-secret', '-cs', dest='consumer_secret',
                    help='consumer secret')
 parser.add_argument('--token-key', '-tk', dest='token_key',
                    help='token key')
-parser.add_argument('--token_secret', '-ts', dest='token_secret',
+parser.add_argument('--token-secret', '-ts', dest='token_secret',
                    help='token secret')
 parser.add_argument('--request-token', action='store_true', dest='request_token',
                    help='create new token')
@@ -67,13 +67,13 @@ parser.add_argument('-I', '--head', dest='head', action='store_true',
                    help='Show document info only')
 parser.add_argument('-i', '--include', dest='include', action='store_true',
                    help='Include protocol headers in the output')
-                   
+
 parser.add_argument('urls',  nargs='*')
 
 
 
 
-                   
+
 args = parser.parse_args()
 
 
@@ -89,9 +89,9 @@ def request_token(consumer_key, consumer_secret, request_token_url, request_toke
   if resp['status'] != '201' and resp['status'] != '200':
       print "Error receiving request token"
       exit(1)
-  
+
   request_token = dict(urlparse.parse_qsl(content))
-  
+
   print ""
   print "Go to the following link in your browser:"
   print "%s?oauth_token=%s&oauth_callback=%s" % (request_token_authorize_url, request_token['oauth_token'], request_token_callback)
@@ -99,13 +99,13 @@ def request_token(consumer_key, consumer_secret, request_token_url, request_toke
   while accepted.lower() == 'n':
     accepted = raw_input('Have you authorized me? (y/n) ')
   oauth_verifier = raw_input('What is the PIN? ')
-  
+
   token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
   token.set_verifier(oauth_verifier)
   client = oauth.Client(consumer, token)
-  
+
   resp, content = client.request(request_token_access_token_url)
-  
+
   access_token = dict(urlparse.parse_qsl(content))
   config.add_section(domain)
   if not config.has_section('defaults'):
@@ -122,13 +122,13 @@ def list_domains():
     if len(config.sections()) < 2:
         print 'No domains have been defined';
         exit(0)
-        
+
     if config.has_section('defaults') and config.has_option('defaults', 'domain'):
         default_domain = config.get('defaults', 'domain')
     else:
         print "Error parsing config file";
         exit(1)
-        
+
     for section in config.sections():
         if section == 'defaults':
             continue
@@ -142,20 +142,20 @@ def no_config_available(args):
   if not args.request_token and (args.token_key == None or args.token_secret == None):
     print "Set token key and secret or use --request_token"
     exit(1)
-  
+
   if args.request_token and args.request_token_url != None and args.request_token_callback != None and args.request_token_authorize_url != None and args.request_token_access_token_url != None:
     access_token = request_token(args.consumer_key, args.consumer_secret, args.request_token_url, args.request_token_callback, args.request_token_authorize_url, args.request_token_access_token_url, args.domain)
     exit(1)
   else:
       print "Set request_token_url, request_token_callback, request_token_authorize_url and request_token_access_token_url "
       exit(1)
-  
+
 
 if args.list_domains:
     list_domains()
     exit(0)
-      
-  
+
+
 if args.domain == None:
   if config.has_section('defaults') and config.has_option('defaults', 'domain'):
     domain = config.get('defaults', 'domain')
@@ -176,7 +176,7 @@ token = oauth.Token(key=config.get(domain, 'token_key'), secret=config.get(domai
 client = oauth.Client(consumer, token)
 
 headers = {}
-body = None 
+body = None
 
 if args.json:
   headers['Content-Type']='application/json'
@@ -197,7 +197,7 @@ if args.head:
     http_method='HEAD'
 else:
     http_method=args.http_method
-http_method = args.http_method    
+http_method = args.http_method
 
 for url in args.urls:
   try:
@@ -216,7 +216,7 @@ for url in args.urls:
           for k in resp:
               if k in ['status']:
                   continue
-              print '%s: %s' % ('-'.join((ck.capitalize() for ck in k.split('-'))), resp[k]) 
+              print '%s: %s' % ('-'.join((ck.capitalize() for ck in k.split('-'))), resp[k])
       if not args.head:
           if args.json:
             try:
@@ -237,8 +237,6 @@ for url in args.urls:
               exit(0)
           else:
             print content
-          
+
   except Exception, e:
       print e
-      
-
