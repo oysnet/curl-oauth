@@ -8,6 +8,7 @@ import os, ConfigParser
 import argparse
 import urlparse
 import json
+import httplib2
 try:
   from pygments import highlight
   from pygments.lexers import JavascriptLexer
@@ -15,6 +16,10 @@ try:
   pygment_support = True
 except:
   pygment_support = False
+try:
+  import certifi
+except ImportError:
+  certifi = None
 
 settings_file = os.path.expanduser('~/.curl-oauth')
 config = ConfigParser.RawConfigParser()
@@ -80,7 +85,13 @@ def request_token(consumer_key, consumer_secret, request_token_url, request_toke
   print "requesting token to %s for %s" % (request_token_url, consumer_key)
   consumer = oauth.Consumer(consumer_key, consumer_secret)
   client = oauth.Client(consumer)
-  resp, content = client.request(request_token_url)
+  if certifi:
+    client.ca_certs = certifi.where()
+  try:
+    resp, content = client.request(request_token_url)
+  except httplib2.SSLHandshakeError:
+    print 'Please run "pip install certifi", and this script will automatically use the certificates that certifi provides.'
+    exit(1)
   #print resp, content
   if resp['status'] == '401':
     print "Unauthorized access, check your consumer data"
@@ -105,6 +116,8 @@ def request_token(consumer_key, consumer_secret, request_token_url, request_toke
   token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
   token.set_verifier(oauth_verifier)
   client = oauth.Client(consumer, token)
+  if certifi:
+    client.ca_certs = certifi.where()
 
   resp, content = client.request(request_token_access_token_url)
 
@@ -176,6 +189,8 @@ if not config.has_section(domain):
 consumer = oauth.Consumer(key=config.get(domain, 'consumer_key'), secret=config.get(domain, 'consumer_secret'))
 token = oauth.Token(key=config.get(domain, 'token_key'), secret=config.get(domain, 'token_secret'))
 client = oauth.Client(consumer, token)
+if certifi:
+    client.ca_certs = certifi.where()
 
 headers = {}
 body = None
@@ -240,5 +255,8 @@ for url in args.urls:
           else:
             print content
 
+  except httplib2.SSLHandshakeError:
+      print e
+      print 'Please run "pip install certifi", and this script will automatically use the certificates that certifi provides.'
   except Exception, e:
       print e
