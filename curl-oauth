@@ -7,7 +7,6 @@ import oauth2 as oauth
 import os, ConfigParser
 import argparse
 import urlparse
-import urllib
 import json
 try:
   from pygments import highlight
@@ -94,7 +93,10 @@ def request_token(consumer_key, consumer_secret, request_token_url, request_toke
 
   print ""
   print "Go to the following link in your browser:"
-  print "%s?oauth_token=%s&oauth_callback=%s" % (request_token_authorize_url, request_token['oauth_token'], request_token_callback)
+  url = "%s?oauth_token=%s" % (request_token_authorize_url, request_token['oauth_token'])
+  if request_token_callback:
+    url += "&oauth_callback=%s" % request_token_callback
+  print url
   accepted = 'n'
   while accepted.lower() == 'n':
     accepted = raw_input('Have you authorized me? (y/n) ')
@@ -143,11 +145,11 @@ def no_config_available(args):
     print "Set token key and secret or use --request_token"
     exit(1)
 
-  if args.request_token and args.request_token_url != None and args.request_token_callback != None and args.request_token_authorize_url != None and args.request_token_access_token_url != None:
+  if args.request_token and args.request_token_url != None and args.request_token_authorize_url != None and args.request_token_access_token_url != None:
     access_token = request_token(args.consumer_key, args.consumer_secret, args.request_token_url, args.request_token_callback, args.request_token_authorize_url, args.request_token_access_token_url, args.domain)
     exit(1)
   else:
-      print "Set request_token_url, request_token_callback, request_token_authorize_url and request_token_access_token_url "
+      print "Set request_token_url, request_token_authorize_url and request_token_access_token_url "
       exit(1)
 
 
