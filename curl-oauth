@@ -7,8 +7,9 @@ import oauth2 as oauth
 import os, ConfigParser
 import argparse
 import urlparse
-import urllib
 import json
+import httplib2
+import sys
 try:
   from pygments import highlight
   from pygments.lexers import JavascriptLexer
@@ -16,7 +17,11 @@ try:
   pygment_support = True
 except:
   pygment_support = False
-  
+try:
+  import certifi
+except ImportError:
+  certifi = None
+
 settings_file = os.path.expanduser('~/.curl-oauth')
 config = ConfigParser.RawConfigParser()
 if os.path.isfile(settings_file):
@@ -41,7 +46,7 @@ parser.add_argument('--consumer-secret', '-cs', dest='consumer_secret',
                    help='consumer secret')
 parser.add_argument('--token-key', '-tk', dest='token_key',
                    help='token key')
-parser.add_argument('--token_secret', '-ts', dest='token_secret',
+parser.add_argument('--token-secret', '-ts', dest='token_secret',
                    help='token secret')
 parser.add_argument('--request-token', action='store_true', dest='request_token',
                    help='create new token')
@@ -63,17 +68,19 @@ parser.add_argument('-H', '--header', dest='headers', action='append',
                    help='Custom header to pass to server')
 parser.add_argument('-d', '--data', dest='data',
                    help='HTTP POST data')
+parser.add_argument('-T', '--upload-file', dest='upload_file',
+                   help='Transfer a file in the body of the http request.  Defaults to PUT.')
 parser.add_argument('-I', '--head', dest='head', action='store_true',
                    help='Show document info only')
 parser.add_argument('-i', '--include', dest='include', action='store_true',
                    help='Include protocol headers in the output')
-                   
+
 parser.add_argument('urls',  nargs='*')
 
 
 
 
-                   
+
 args = parser.parse_args()
 
 
@@ -81,7 +88,13 @@ def request_token(consumer_key, consumer_secret, request_token_url, request_toke
   print "requesting token to %s for %s" % (request_token_url, consumer_key)
   consumer = oauth.Consumer(consumer_key, consumer_secret)
   client = oauth.Client(consumer)
-  resp, content = client.request(request_token_url)
+  if certifi:
+    client.ca_certs = certifi.where()
+  try:
+    resp, content = client.request(request_token_url)
+  except httplib2.SSLHandshakeError:
+    print 'Please run "pip install certifi", and this script will automatically use the certificates that certifi provides.'
+    exit(1)
   #print resp, content
   if resp['status'] == '401':
     print "Unauthorized access, check your consumer data"
@@ -89,23 +102,28 @@ def request_token(consumer_key, consumer_secret, request_token_url, request_toke
   if resp['status'] != '201' and resp['status'] != '200':
       print "Error receiving request token"
       exit(1)
-  
+
   request_token = dict(urlparse.parse_qsl(content))
-  
+
   print ""
   print "Go to the following link in your browser:"
-  print "%s?oauth_token=%s&oauth_callback=%s" % (request_token_authorize_url, request_token['oauth_token'], request_token_callback)
+  url = "%s?oauth_token=%s" % (request_token_authorize_url, request_token['oauth_token'])
+  if request_token_callback:
+    url += "&oauth_callback=%s" % request_token_callback
+  print url
   accepted = 'n'
   while accepted.lower() == 'n':
     accepted = raw_input('Have you authorized me? (y/n) ')
   oauth_verifier = raw_input('What is the PIN? ')
-  
+
   token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
   token.set_verifier(oauth_verifier)
   client = oauth.Client(consumer, token)
-  
+  if certifi:
+    client.ca_certs = certifi.where()
+
   resp, content = client.request(request_token_access_token_url)
-  
+
   access_token = dict(urlparse.parse_qsl(content))
   config.add_section(domain)
   if not config.has_section('defaults'):
@@ -122,13 +140,13 @@ def list_domains():
     if len(config.sections()) < 2:
         print 'No domains have been defined';
         exit(0)
-        
+
     if config.has_section('defaults') and config.has_option('defaults', 'domain'):
         default_domain = config.get('defaults', 'domain')
     else:
         print "Error parsing config file";
         exit(1)
-        
+
     for section in config.sections():
         if section == 'defaults':
             continue
@@ -142,20 +160,20 @@ def no_config_available(args):
   if not args.request_token and (args.token_key == None or args.token_secret == None):
     print "Set token key and secret or use --request_token"
     exit(1)
-  
-  if args.request_token and args.request_token_url != None and args.request_token_callback != None and args.request_token_authorize_url != None and args.request_token_access_token_url != None:
+
+  if args.request_token and args.request_token_url != None and args.request_token_authorize_url != None and args.request_token_access_token_url != None:
     access_token = request_token(args.consumer_key, args.consumer_secret, args.request_token_url, args.request_token_callback, args.request_token_authorize_url, args.request_token_access_token_url, args.domain)
     exit(1)
   else:
-      print "Set request_token_url, request_token_callback, request_token_authorize_url and request_token_access_token_url "
+      print "Set request_token_url, request_token_authorize_url and request_token_access_token_url "
       exit(1)
-  
+
 
 if args.list_domains:
     list_domains()
     exit(0)
-      
-  
+
+
 if args.domain == None:
   if config.has_section('defaults') and config.has_option('defaults', 'domain'):
     domain = config.get('defaults', 'domain')
@@ -174,9 +192,11 @@ if not config.has_section(domain):
 consumer = oauth.Consumer(key=config.get(domain, 'consumer_key'), secret=config.get(domain, 'consumer_secret'))
 token = oauth.Token(key=config.get(domain, 'token_key'), secret=config.get(domain, 'token_secret'))
 client = oauth.Client(consumer, token)
+if certifi:
+    client.ca_certs = certifi.where()
 
 headers = {}
-body = None 
+body = None
 
 if args.json:
   headers['Content-Type']='application/json'
@@ -193,19 +213,31 @@ if args.data is not None:
     body = args.data
 
 
+if args.upload_file:
+    if args.http_method == 'GET':
+        args.http_method = 'PUT'
+    if args.upload_file == '-':
+        input = sys.stdin
+    else:
+        input = open(args.upload_file)
+    body = input.read()
+
 if args.head:
-    http_method='HEAD'
+    args.http_method == 'HEAD'
+
+if args.http_method == 'HEAD':
+    # work around https://github.com/simplegeo/python-oauth2/issues/58
+    oauth_http_method = 'GET'
 else:
-    http_method=args.http_method
-http_method = args.http_method    
+    oauth_http_method=args.http_method
 
 for url in args.urls:
   try:
       if body is not None:
-          resp, content = client.request(url, http_method, headers=headers, body=body)
+          resp, content = client.request(url, oauth_http_method, headers=headers, body=body)
       else:
-          resp, content = client.request(url, http_method, headers=headers)
-      if args.head or args.include:
+          resp, content = client.request(url, oauth_http_method, headers=headers)
+      if args.http_method == 'HEAD' or args.include:
           if resp.version == 11:
               http_version = '1.1'
           elif resp.version == 10:
@@ -216,8 +248,8 @@ for url in args.urls:
           for k in resp:
               if k in ['status']:
                   continue
-              print '%s: %s' % ('-'.join((ck.capitalize() for ck in k.split('-'))), resp[k]) 
-      if not args.head:
+              print '%s: %s' % ('-'.join((ck.capitalize() for ck in k.split('-'))), resp[k])
+      if args.http_method != 'HEAD':
           if args.json:
             try:
               content = json.dumps(json.loads(content), indent=2)
@@ -237,8 +269,9 @@ for url in args.urls:
               exit(0)
           else:
             print content
-          
+
+  except httplib2.SSLHandshakeError:
+      print e
+      print 'Please run "pip install certifi", and this script will automatically use the certificates that certifi provides.'
   except Exception, e:
       print e
-      
-

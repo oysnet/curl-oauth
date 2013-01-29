@@ -15,19 +15,19 @@ START
 export API="http://example.com/api/oauth";
 curl-oauth --domain example \
   --request-token \
-  --consumer_secret Mq4As9xngJzyqQ2vRaYWGF9qRquvyBxI \
-  --consumer_key BQNmyk5sAb7m8vSvbA  \
-  --request_token_url $API/request_token/ \
-  --request_token_callback http://example.com \
-  --request_token_authorize_url $API/authorize/ 
-  --request_token_access_token_url $API/access_token/
-  
+  --consumer-secret Mq4As9xngJzyqQ2vRaYWGF9qRquvyBxI \
+  --consumer-key BQNmyk5sAb7m8vSvbA  \
+  --request-token-url $API/request_token/ \
+  --request-token-callback http://example.com \
+  --request-token-authorize-url $API/authorize/
+  --request-token-access-token-url $API/access_token/
+
 USAGE
 
 usage: curl-oauth [-h] [--domain DOMAIN] [--list-domains]
                   [--consumer-key CONSUMER_KEY]
                   [--consumer-secret CONSUMER_SECRET] [--token-key TOKEN_KEY]
-                  [--token_secret TOKEN_SECRET] [--request-token]
+                  [--token-secret TOKEN_SECRET] [--request-token]
                   [--request-token-url REQUEST_TOKEN_URL]
                   [--request-token-callback REQUEST_TOKEN_CALLBACK]
                   [--request-token-authorize-url REQUEST_TOKEN_AUTHORIZE_URL]
@@ -61,7 +61,7 @@ optional arguments:
                         request token authorize url
   --request-token-access-token-url REQUEST_TOKEN_ACCESS_TOKEN_URL
                         request token access verify url
-  --json                add content type and prettify output (install pigments
+  --json                add content type and prettify output (install pygments
                         for colors)
   -X HTTP_METHOD, --request HTTP_METHOD
                         Specify request command to use
