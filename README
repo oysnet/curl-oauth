@@ -35,8 +35,8 @@ usage: curl-oauth [-h] [--domain DOMAIN] [--list-domains]
                   [--request-token-callback REQUEST_TOKEN_CALLBACK]
                   [--request-token-authorize-url REQUEST_TOKEN_AUTHORIZE_URL]
                   [--request-token-access-token-url REQUEST_TOKEN_ACCESS_TOKEN_URL]
-                  [--json] [-X HTTP_METHOD] [-H HEADERS] [-d DATA] [-T FILE_NAME] [-I] [-i]
-                  [urls [urls ...]]
+                  [--json] [-X HTTP_METHOD] [-H HEADERS] [-d DATA] [-T FILE_NAME] 
+                  [-I] [-i] [urls [urls ...]]
 
 A curl like tool with oauth support
 
@@ -72,6 +72,7 @@ optional arguments:
                         Custom header to pass to server
   -d DATA, --data DATA  HTTP POST data
   -t FILE_NAME, --upload-file FILE_NAME
-                        Transfer a file in the body of the http request. Defaults to PUT.
+                        Transfer a file in the body of the http request. 
+                        Defaults to PUT.
   -I, --head            Show document info only
   -i, --include         Include protocol headers in the output
